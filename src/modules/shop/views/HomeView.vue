@@ -587,3 +587,14 @@
     </div>
   </section>
 </template>
+
+<script setup lang="ts">
+import { getProducts } from '@/modules/products/actions';
+import { useQuery } from '@tanstack/vue-query';
+
+const { data: products, isLoading } = useQuery({
+  queryKey: ['products', { page: 1 }],
+  queryFn: () => getProducts(),
+  staleTime: 1000 * 60 * 2,
+});
+</script>
