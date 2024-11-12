@@ -1,3 +1,4 @@
+import { authRoutes } from '@/modules/auth/routes'
 import ShopLayout from '@/modules/shop/layout/ShopLayout.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
@@ -12,14 +13,7 @@ const router = createRouter({
         { path: '', name: 'home', component: () => import('@/modules/shop/views/HomeView.vue'), },
       ],
     },
-    // {
-    //   path: '/about',
-    //   name: 'about',
-    //   // route level code-splitting
-    //   // this generates a separate chunk (About.[hash].js) for this route
-    //   // which is lazy-loaded when the route is visited.
-    //   component: () => import('../views/AboutView.vue'),
-    // },
+    authRoutes,
   ],
 })
 
