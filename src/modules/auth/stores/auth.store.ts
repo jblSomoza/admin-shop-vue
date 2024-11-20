@@ -30,6 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
     authStatus.value = AuthStatus.NotAuthenticated;
     user.value = undefined;
     token.value = '';

@@ -1,3 +1,4 @@
+import { AdminRoutes } from '@/modules/admin/routes'
 import { authRoutes } from '@/modules/auth/routes'
 import ShopLayout from '@/modules/shop/layout/ShopLayout.vue'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -14,6 +15,7 @@ const router = createRouter({
       ],
     },
     authRoutes,
+    AdminRoutes,
   ],
 })
 
