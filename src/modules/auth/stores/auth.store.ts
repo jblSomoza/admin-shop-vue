@@ -90,6 +90,7 @@ export const useAuthStore = defineStore('auth', () => {
     authStatus,
 
     // Getter
+    isAdmin: computed(() => user.value?.roles.includes('admin') ?? false),
     isChecking: computed(() => authStatus.value === AuthStatus.Checking),
     isAuthenticated: computed(() => authStatus.value === AuthStatus.Authenticated),
     isUnauthenticated: computed(() => authStatus.value === AuthStatus.NotAuthenticated),
