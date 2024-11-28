@@ -1,13 +1,17 @@
-import { defineComponent, watchEffect } from "vue";
+import { defineComponent, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
-import { useForm } from 'vee-validate';
+import { useFieldArray, useForm } from 'vee-validate';
 import * as yup from 'yup';
-
-import { getProductById } from "@/modules/products/actions";
 import { useQuery } from "@tanstack/vue-query";
 
+
+import { getProductById } from "@/modules/products/actions";
+import CustomInput from "@/modules/common/components/CustomInput.vue";
+import CustomTextArea from "@/modules/common/components/CustomTextArea.vue";
+
+
 const schema = yup.object({
-  title: yup.string().required(),
+  title: yup.string().required().min(2),
   slug: yup.string().required(),
   description: yup.string().required(),
   price: yup.number().required(),
@@ -17,6 +21,10 @@ const schema = yup.object({
 
 
 export default defineComponent({
+  components: {
+    CustomInput,
+    CustomTextArea,
+  },
   props: {
     productId: {
       type: String,
@@ -25,13 +33,13 @@ export default defineComponent({
   },
   setup(props) {
     const router = useRouter();
-    const { data: product, isError, isLoading } = useQuery({
+    const { data: product, isError, isLoading, } = useQuery({
       queryKey: ['product', props.productId],
       queryFn: async () => getProductById(props.productId),
       retry: false,
     })
-    const { values, defineField, errors } = useForm({
-      validationSchema: schema
+    const { values, defineField, errors, handleSubmit, resetForm, meta } = useForm({
+      validationSchema: schema,
     });
     const [title, titleAttrs] = defineField('title');
     const [slug, slugAttrs] = defineField('slug');
@@ -40,6 +48,13 @@ export default defineComponent({
     const [stock, stockAttrs] = defineField('stock');
     const [gender, genderAttrs] = defineField('gender');
 
+    const { fields: images, } = useFieldArray<string>('images');
+    const { fields: sizes, remove: removeSize, push: pushSize } = useFieldArray<string>('sizes');
+
+    const onSubmit = handleSubmit((value) => {
+      console.log(value);
+    });
+
 
     watchEffect(() => {
       if (isError.value && !isLoading.value) {
@@ -47,6 +62,30 @@ export default defineComponent({
         return
       }
     });
+
+    watch(product, () => {
+      if (!product) return;
+
+      resetForm({
+        values: product.value,
+      });
+    }, {
+      deep: true,
+      immediate: true, //! Important to run the watcher immediately
+    })
+
+    const toggleSize = (size: string) => {
+      const currentSizes = sizes.value.map(s => s.value);
+
+      const hasSize = currentSizes.includes(size);
+
+      if (hasSize) {
+        const index = currentSizes.indexOf(size);
+        removeSize(index);
+      } else {
+        pushSize(size);
+      }
+    };
 
     return {
       // Properties
@@ -64,9 +103,21 @@ export default defineComponent({
       gender,
       genderAttrs,
       errors,
+      images,
+      sizes,
+      meta,
 
       // Getters
       allSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+
+      // Methods
+      onSubmit,
+      toggleSize,
+
+      hasSize: (size: string) => {
+        const currentSizes: string[] = sizes.value.map(s => s.value);
+        return currentSizes.includes(size);
+      }
     }
   },
 });
