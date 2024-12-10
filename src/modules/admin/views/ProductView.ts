@@ -1,13 +1,14 @@
-import { defineComponent, watch, watchEffect } from "vue";
+import { defineComponent, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import { useFieldArray, useForm } from 'vee-validate';
 import * as yup from 'yup';
-import { useQuery } from "@tanstack/vue-query";
+import { useMutation, useQuery } from "@tanstack/vue-query";
 
 
-import { getProductById } from "@/modules/products/actions";
+import { createUpdateProductAction, getProductById } from "@/modules/products/actions";
 import CustomInput from "@/modules/common/components/CustomInput.vue";
 import CustomTextArea from "@/modules/common/components/CustomTextArea.vue";
+import { useToast } from "vue-toastification";
 
 
 const schema = yup.object({
@@ -32,12 +33,19 @@ export default defineComponent({
     },
   },
   setup(props) {
+    console.log(props.productId);
+
     const router = useRouter();
-    const { data: product, isError, isLoading, } = useQuery({
+    const { data: product, isError, isLoading, refetch, } = useQuery({
       queryKey: ['product', props.productId],
       queryFn: async () => getProductById(props.productId),
       retry: false,
+    });
+
+    const { mutate, isPending, isSuccess: isUpdatedSuccess, data: updatedProduct } = useMutation({
+      mutationFn: createUpdateProductAction,
     })
+
     const { values, defineField, errors, handleSubmit, resetForm, meta } = useForm({
       validationSchema: schema,
     });
@@ -52,7 +60,7 @@ export default defineComponent({
     const { fields: sizes, remove: removeSize, push: pushSize } = useFieldArray<string>('sizes');
 
     const onSubmit = handleSubmit((value) => {
-      console.log(value);
+      mutate(value);
     });
 
 
@@ -72,7 +80,23 @@ export default defineComponent({
     }, {
       deep: true,
       immediate: true, //! Important to run the watcher immediately
-    })
+    });
+
+    watch(isUpdatedSuccess, (value) => {
+      console.log('isUpdatedSuccess', value);
+
+      if (!value) return;
+
+      useToast().success('Product updated successfully');
+      router.replace(`/admin/products/${updatedProduct.value!.id}`);
+      resetForm({
+        values: updatedProduct.value,
+      });
+    });
+
+    watch(() => props.productId, () => {
+      refetch();
+    });
 
     const toggleSize = (size: string) => {
       const currentSizes = sizes.value.map(s => s.value);
@@ -106,6 +130,7 @@ export default defineComponent({
       images,
       sizes,
       meta,
+      isPending,
 
       // Getters
       allSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
