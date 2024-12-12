@@ -59,9 +59,27 @@ export default defineComponent({
     const { fields: images, } = useFieldArray<string>('images');
     const { fields: sizes, remove: removeSize, push: pushSize } = useFieldArray<string>('sizes');
 
-    const onSubmit = handleSubmit((value) => {
-      mutate(value);
+    const imageFiles = ref<File[]>([]);
+
+    const onSubmit = handleSubmit((values) => {
+      const product = {
+        ...values,
+        images: [...values.images, ...imageFiles.value],
+      }
+
+      mutate(product);
     });
+
+    const onFilesChange = (e: Event) => {
+      const fileInput = e.target as HTMLInputElement;
+      const files = fileInput.files;
+
+      if (!files || files.length === 0) return;
+
+      for (const file of files) {
+        imageFiles.value.push(file);
+      }
+    }
 
 
     watchEffect(() => {
@@ -132,6 +150,9 @@ export default defineComponent({
       meta,
       isPending,
 
+      imageFiles,
+      onFilesChange,
+
       // Getters
       allSizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
 
@@ -142,6 +163,9 @@ export default defineComponent({
       hasSize: (size: string) => {
         const currentSizes: string[] = sizes.value.map(s => s.value);
         return currentSizes.includes(size);
+      },
+      temporalUrl: (imageFile: File) => {
+        return URL.createObjectURL(imageFile);
       }
     }
   },
